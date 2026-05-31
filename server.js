@@ -8,7 +8,7 @@ app.get('/health', (req, res) => res.send('alive'));
 app.get('/', (req, res) => {
   res.send(
     '<html><body style="font-family:sans-serif;padding:40px;background:#111;color:#fff">' +
-    '<h1>⚽ Test Futsal Algeria</h1>' +
+    '<h1>🇩🇿 Test Futsal Algeria</h1>' +
     '<p style="font-size:22px">Room Link: <a href="' + roomLink + '" style="color:#4af" target="_blank">' + roomLink + '</a></p>' +
     '<p style="color:#aaa">Share this link with your friends!</p>' +
     (roomLink.includes('haxball') ? '' : '<script>setTimeout(()=>location.reload(),8000);</script>') +
@@ -17,17 +17,12 @@ app.get('/', (req, res) => {
 });
 app.listen(process.env.PORT || 3000, () => console.log('Health server running'));
 
-// ============================================================
-// HAXBALL ROOM SCRIPT
-// ============================================================
 const ROOM_SCRIPT = function(token) {
-  // CONFIG
   var MAX_SCORE = 3;
   var TIME_LIMIT = 7;
   var TEAM_SIZE = 3;
-  var SUPER_ADMINS = ["Bruno Fernandes"]; // ← replace with your exact HaxBall name
+  var SUPER_ADMINS = ["Bruno Fernandes"];
 
-  // STADIUM
   var STADIUM = JSON.stringify({
     "name": "Futsal Algeria 3v3",
     "width": 420, "height": 200, "spawnDistance": 150,
@@ -81,7 +76,6 @@ const ROOM_SCRIPT = function(token) {
     "blueSpawnPoints": [[300, 0],  [220, -70],  [220, 70]]
   });
 
-  // ROOM
   var room = HBInit({
     roomName: "🇩🇿 Test Futsal Algeria | 3v3 ELO",
     maxPlayers: 16,
@@ -133,11 +127,11 @@ const ROOM_SCRIPT = function(token) {
     redLead:    ["🔴 Red pulling away!", "🔴 Red are in control!"],
     blueLead:   ["🔵 Blue dominating!", "🔵 Blue look dangerous!"],
     tied:       ["⚖️ All level! Far from over!", "🔥 Back to square one!", "😤 The equalizer!"],
-    matchPoint: ["🚨 MATCH POINT! One goal wins it!", "💣 ONE GOAL AWAY from victory!", "😰 Next goal could be the last..."],
-    redWin:     ["🔴 RED WINS! Incredible!", "🔴 Red takes it! Champions!", "🔴 DOMINANT! Red are unstoppable!"],
-    blueWin:    ["🔵 BLUE WINS! Outstanding!", "🔵 Blue clinches it! 🎉", "🔵 BLUE VICTORIOUS!"],
-    draw:       ["🤝 It's a DRAW! What a battle!", "⚖️ All square! Neither could win!", "😤 Stalemate! Honours even!"],
-    kickoff:    ["🎙️ Welcome to the arena! Let's go!", "🎺 KICKOFF! May the best team win!", "⚡ 3v3 action starts NOW! 🇩🇿"]
+    matchPoint: ["🚨 MATCH POINT! One goal wins it!", "💣 ONE GOAL AWAY from victory!"],
+    redWin:     ["🔴 RED WINS! Incredible!", "🔴 Red takes it! Champions!"],
+    blueWin:    ["🔵 BLUE WINS! Outstanding!", "🔵 Blue clinches it!"],
+    draw:       ["🤝 It's a DRAW! What a battle!", "⚖️ All square!"],
+    kickoff:    ["🎙️ Welcome! Let's go! 🇩🇿", "⚡ 3v3 action starts NOW!"]
   };
   function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function say(type) { room.sendChat(rnd(C[type])); }
@@ -223,7 +217,6 @@ const ROOM_SCRIPT = function(token) {
     }
     if (team === 1) scores.red++; else scores.blue++;
     room.sendChat("🔴 " + scores.red + " — " + scores.blue + " 🔵");
-
     setTimeout(function() {
       if (scores.red === scores.blue) say("tied");
       else if (team === 1) say("redLead");
@@ -241,7 +234,6 @@ const ROOM_SCRIPT = function(token) {
     if (winner === "red")  { say("redWin");  updateElo(redNames, blueNames, scores.red - scores.blue); }
     else if (winner === "blue") { say("blueWin"); updateElo(blueNames, redNames, scores.blue - scores.red); }
     else say("draw");
-
     setTimeout(function() {
       room.sendChat("━━━━━━━━━━━━━━━━━━━━━");
       room.sendChat("📊 MATCH REPORT 🔴 " + scores.red + " — " + scores.blue + " 🔵");
@@ -316,12 +308,9 @@ const ROOM_SCRIPT = function(token) {
   console.log("Room started!");
 };
 
-// ============================================================
-// PUPPETEER LAUNCHER
-// ============================================================
 (async () => {
   const TOKEN = process.env.HAXBALL_TOKEN;
-  if (!TOKEN) { console.error("❌ HAXBALL_TOKEN not set!"); process.exit(1); }
+  if (!TOKEN) { console.error("HAXBALL_TOKEN not set!"); process.exit(1); }
 
   console.log("🚀 Launching browser...");
   const browser = await puppeteer.launch({
@@ -336,10 +325,7 @@ const ROOM_SCRIPT = function(token) {
   });
 
   const page = await browser.newPage();
-  page.on('console', async msg => {
-    const text = msg.text();
-    console.log('[ROOM]', text);
-  });
+  page.on('console', msg => console.log('[ROOM]', msg.text()));
   page.on('pageerror', err => console.error('[ERROR]', err.message));
 
   console.log("🌐 Loading HaxBall headless...");
@@ -349,7 +335,6 @@ const ROOM_SCRIPT = function(token) {
   console.log("⚽ Starting room...");
   await page.evaluate(ROOM_SCRIPT, TOKEN);
 
-  // Wait for room link to appear in page text
   try {
     await page.waitForFunction(
       'document.body.innerText.includes("haxball.com/play")',
@@ -362,16 +347,12 @@ const ROOM_SCRIPT = function(token) {
     if (link) {
       roomLink = link;
       console.log("🔗 ROOM LINK: " + link);
-      console.log("✅ Room is LIVE! Share: " + link);
     }
   } catch(e) {
-    console.log("⚠️ Could not detect room link automatically — check haxball.com room list");
-    console.log("🔍 Room name: 🇩🇿 Test Futsal Algeria | 3v3 ELO");
+    console.log("⚠️ Room is live — search '🇩🇿 Test Futsal Algeria' in HaxBall room list");
   }
 
   page.on('close', function() {
-    console.log("⚠️ Page closed — restarting...");
     setTimeout(function(){ process.exit(1); }, 3000);
   });
 })();
-SERVEREOF
