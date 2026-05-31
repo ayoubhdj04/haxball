@@ -2,7 +2,16 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 
 const app = express();
+let roomLink = 'Room still starting...';
+
 app.get('/health', (req, res) => res.send('alive'));
+app.get('/', (req, res) => res.send(`
+  <html><body style="font-family:sans-serif;padding:40px;background:#111;color:#fff">
+  <h1>⚽ HaxBall 3v3 Pro Room</h1>
+  <p style="font-size:20px">Room Link: <a href="${roomLink}" style="color:#4af" target="_blank">${roomLink}</a></p>
+  <p style="color:#aaa">Share this link with your friends!</p>
+  </body></html>
+`));
 app.listen(process.env.PORT || 3000, () => console.log('Health server running'));
 
 // ============================================================
@@ -212,11 +221,15 @@ function getTeam(id) { return room.getPlayerList().filter(function(p){ return p.
 // ============================================================
 //  EVENTS
 // ============================================================
+var SUPER_ADMINS = ["Bruno Fernandes"]; // ← replace with your exact HaxBall name
+
 room.onPlayerJoin = function(player) {
   var p = getPlayer(player.name);
   room.sendChat("👋 Welcome " + player.name + " | " + getRank(p.elo) + " [" + p.elo + " ELO]");
   room.sendChat("📋 !elo  !stats  !top5  !score  !help");
-  if (room.getPlayerList().length === 1) room.setPlayerAdmin(player.id, true);
+  if (SUPER_ADMINS.includes(player.name)) {
+    room.setPlayerAdmin(player.id, true);
+  }
 };
 
 room.onPlayerLeave = function(player) {
@@ -465,7 +478,25 @@ console.log("✅ Room script loaded successfully!");
   console.log("⚽ Injecting room script...");
   await page.evaluate(HAXBALL_SCRIPT(TOKEN));
 
-  console.log("✅ HaxBall 3v3 Pro room is LIVE!");
+  // Wait for room link to appear
+  await page.waitForFunction(
+    "document.body.innerText.includes('haxball.com/play')",
+    { timeout: 30000 }
+  ).catch(() => console.log("⚠️ Could not auto-detect room link from page"));
+
+  const link = await page.evaluate(() => {
+    const text = document.body.innerText;
+    const match = text.match(/https:\/\/www\.haxball\.com\/play\?c=[\w]+/);
+    return match ? match[0] : null;
+  });
+
+  if (link) {
+    roomLink = link;
+    console.log("🔗 YOUR ROOM LINK: " + link);
+    console.log("✅ HaxBall 3v3 Pro room is LIVE! Share: " + link);
+  } else {
+    console.log("✅ HaxBall 3v3 Pro room is LIVE! Open your Render URL to get the link.");
+  }
 
   // Auto-restart if page crashes
   page.on('close', async () => {
